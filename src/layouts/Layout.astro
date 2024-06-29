@@ -1,0 +1,126 @@
+---
+import Nav from "../components/Nav.astro";
+import "meilisearch-docsearch/css";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="Lucia is an open source auth library that abstracts away the complexity of handling sessions."
+    />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{`${title} - Lucia`}</title>
+  </head>
+  <body>
+    <div
+      id="mobile-top"
+      class="group border-b px-8 py-2 md:hidden"
+      data-nav-open="false"
+    >
+      <header class="peer flex items-center">
+        <a href="/" class="text-2xl font-medium leading-none">Lucia</a>
+        <div class="ml-auto flex gap-4">
+          <div id="mobile-searchbox"></div>
+          <button id="mobile-nav-button" class="group">
+            <svg
+              class="group-data-[nav-open=true]:hidden"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-menu"
+              ><line x1="4" x2="20" y1="12" y2="12"></line><line
+                x1="4"
+                x2="20"
+                y1="6"
+                y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg
+            >
+            <svg
+              class="group-data-[nav-open=false]:hidden"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-x"
+              ><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg
+            >
+          </button>
+        </div>
+      </header>
+      <div id="mobile-nav" class="hidden group-data-[nav-open=true]:block">
+        <Nav />
+      </div>
+    </div>
+    <div class="mx-auto w-full max-w-5xl p-8">
+      <aside class="fixed hidden w-56 md:block">
+        <a href="/" class="text-2xl font-medium leading-none">Lucia</a>
+        <div id="desktop-searchbox" class="py-2"></div>
+        <Nav />
+      </aside>
+      <main class="md:ml-56">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<script>
+  document
+    .getElementById("mobile-nav-button")
+    ?.addEventListener("click", () => {
+      const parentDiv = document.getElementById(
+        "mobile-top",
+      )! as HTMLDivElement;
+
+      parentDiv.dataset.navOpen =
+        parentDiv.dataset.navOpen === "true" ? "false" : "true";
+    });
+</script>
+
+<script>
+  import MeiliSearch from "meilisearch";
+  import { docsearch } from "meilisearch-docsearch";
+
+  // Only render the searchbar if we can reach our meili instance
+  if (
+    (
+      await new MeiliSearch({
+        host: import.meta.env.PUBLIC_MEILI_URL,
+      }).health()
+    ).status === "available"
+  ) {
+    // Lazy solution for showing search in different places for mobile and desktop
+    docsearch({
+      container: "#desktop-searchbox",
+      host: import.meta.env.PUBLIC_MEILI_URL,
+      apiKey: import.meta.env.PUBLIC_MEILI_SEARCH_API_KEY,
+      indexUid: import.meta.env.PUBLIC_MEILI_INDEX_UID,
+    });
+    docsearch({
+      container: "#mobile-searchbox",
+      host: import.meta.env.PUBLIC_MEILI_URL,
+      apiKey: import.meta.env.PUBLIC_MEILI_SEARCH_API_KEY,
+      indexUid: import.meta.env.PUBLIC_MEILI_INDEX_UID,
+    });
+  }
+</script>

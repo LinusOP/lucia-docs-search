@@ -1,0 +1,44 @@
+---
+import { getCollection } from "astro:content";
+import Codeblock from "../components/mdx/Codeblock.astro";
+import Layout from "../layouts/Layout.astro";
+import { genPageSearchData, meiliClient } from "../lib/search";
+
+export async function getStaticPaths() {
+  const pages = await getCollection("pages");
+
+  const paths = pages.map((page) => ({
+    params: {
+      slug: page.slug === "index" ? "/" : page.slug.replace("index", ""),
+    },
+    props: { page },
+  }));
+
+  const pageSearchData = await genPageSearchData(pages);
+
+  try {
+    await meiliClient
+      .index(import.meta.env.PUBLIC_MEILI_INDEX_UID)
+      .addDocuments(pageSearchData, {
+        primaryKey: "id",
+      });
+
+    console.log("Pushed search data to meili");
+  } catch (error) {
+    console.error("Failed to push search data to meili, error:", error);
+  }
+
+  return paths;
+}
+
+const { page } = Astro.props;
+const { Content } = await page.render();
+---
+
+<Layout title={page.data.title}>
+  <div
+    class="prose prose-stone max-w-none prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-li:my-0"
+  >
+    <Content components={{ pre: Codeblock }} />
+  </div>
+</Layout>
