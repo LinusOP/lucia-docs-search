@@ -23,9 +23,9 @@ import { GitHub } from "arctic";
 
 export const githubAuth = new GitHub(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
 export const googleAuth = new Google(
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-  "http://localhost:3000/login/github/callback",
+	GOOGLE_CLIENT_ID,
+	GOOGLE_CLIENT_SECRET,
+	"http://localhost:3000/login/github/callback"
 );
 ```
 
@@ -42,14 +42,14 @@ const state = generateState();
 // pass state (and code verifier for PKCE)
 // returns the authorization url only
 const authorizationURL = await githubAuth.createAuthorizationURL(state, {
-  scopes: ["email"], // pass scopes here instead
+	scopes: ["email"] // pass scopes here instead
 });
 
 setCookie("github_oauth_state", state, {
-  secure: true, // set to false in localhost
-  path: "/",
-  httpOnly: true,
-  maxAge: 60 * 10, // 10 min
+	secure: true, // set to false in localhost
+	path: "/",
+	httpOnly: true,
+	maxAge: 60 * 10 // 10 min
 });
 
 // redirect to authorization url
@@ -76,26 +76,26 @@ const tokens = await githubAuth.validateAuthorizationCode(code);
 const githubUser = await githubAuth.getUser(tokens.accessToken);
 
 const existingAccount = await db
-  .table("oauth_account")
-  .where("provider_id", "=", "github")
-  .where("provider_user_id", "=", githubUser.id)
-  .get();
+	.table("oauth_account")
+	.where("provider_id", "=", "github")
+	.where("provider_user_id", "=", githubUser.id)
+	.get();
 
 if (existingAccount) {
-  // simplified `createSession()` - second param for session attributes
-  const session = await lucia.createSession(existingUser.id, {});
+	// simplified `createSession()` - second param for session attributes
+	const session = await lucia.createSession(existingUser.id, {});
 
-  // `createSessionCookie()` now takes a session ID instead of the entire session object
-  const sessionCookie = lucia.createSessionCookie(session.id);
+	// `createSessionCookie()` now takes a session ID instead of the entire session object
+	const sessionCookie = lucia.createSessionCookie(session.id);
 
-  // set session cookie as usual (using `Response` as example)
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: "/",
-      "Set-Cookie": sessionCookie.serialize(),
-    },
-  });
+	// set session cookie as usual (using `Response` as example)
+	return new Response(null, {
+		status: 302,
+		headers: {
+			Location: "/",
+			"Set-Cookie": sessionCookie.serialize()
+		}
+	});
 }
 
 // v2 IDs have a length of 15
@@ -104,14 +104,14 @@ const userId = generateId(15);
 await db.beginTransaction();
 // create user manually
 await db.table("user").insert({
-  id: userId,
-  username: github.login,
+	id: userId,
+	username: github.login
 });
 // store oauth account
 await db.table("oauth_account").insert({
-  provider_id: "github",
-  provider_user_id: githubUser.id,
-  user_id: userId,
+	provider_id: "github",
+	provider_user_id: githubUser.id,
+	user_id: userId
 });
 await db.commit();
 
@@ -121,11 +121,11 @@ const session = await lucia.createSession(userId, {});
 const sessionCookie = lucia.createSessionCookie(session.id);
 // set session cookie as usual (using `Response` as example)
 return new Response(null, {
-  status: 302,
-  headers: {
-    Location: "/",
-    "Set-Cookie": sessionCookie.serialize(),
-  },
+	status: 302,
+	headers: {
+		Location: "/",
+		"Set-Cookie": sessionCookie.serialize()
+	}
 });
 ```
 
@@ -135,18 +135,18 @@ Error handling has improved with v3. `validateAuthorizationCode()` throws an `OA
 
 ```ts
 try {
-  const tokens = await githubAuth.validateAuthorizationCode(code);
-  // ...
+	const tokens = await githubAuth.validateAuthorizationCode(code);
+	// ...
 } catch (e) {
-  console.log(e);
-  if (e instanceof OAuth2RequestError) {
-    // bad verification code, invalid credentials, etc
-    return new Response(null, {
-      status: 400,
-    });
-  }
-  return new Response(null, {
-    status: 500,
-  });
+	console.log(e);
+	if (e instanceof OAuth2RequestError) {
+		// bad verification code, invalid credentials, etc
+		return new Response(null, {
+			status: 400
+		});
+	}
+	return new Response(null, {
+		status: 500
+	});
 }
 ```

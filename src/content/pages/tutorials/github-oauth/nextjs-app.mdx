@@ -37,31 +37,31 @@ Create a `DatabaseUserAttributes` interface in the module declaration and add yo
 import { Lucia } from "lucia";
 
 export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    expires: false,
-    attributes: {
-      secure: process.env.NODE_ENV === "production",
-    },
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      // attributes has the type of DatabaseUserAttributes
-      githubId: attributes.github_id,
-      username: attributes.username,
-    };
-  },
+	sessionCookie: {
+		expires: false,
+		attributes: {
+			secure: process.env.NODE_ENV === "production"
+		}
+	},
+	getUserAttributes: (attributes) => {
+		return {
+			// attributes has the type of DatabaseUserAttributes
+			githubId: attributes.github_id,
+			username: attributes.username
+		};
+	}
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseUserAttributes {
-  github_id: number;
-  username: string;
+	github_id: number;
+	username: string;
 }
 ```
 
@@ -78,10 +78,7 @@ Initialize the GitHub provider with the client ID and secret.
 ```ts
 import { GitHub } from "arctic";
 
-export const github = new GitHub(
-  process.env.GITHUB_CLIENT_ID!,
-  process.env.GITHUB_CLIENT_SECRET!,
-);
+export const github = new GitHub(process.env.GITHUB_CLIENT_ID!, process.env.GITHUB_CLIENT_SECRET!);
 ```
 
 ## Sign in page
@@ -91,12 +88,12 @@ Create `app/login/page.tsx` and add a basic sign in button, which should be a li
 ```tsx
 // app/login/page.tsx
 export default async function Page() {
-  return (
-    <>
-      <h1>Sign in</h1>
-      <a href="/login/github">Sign in with GitHub</a>
-    </>
-  );
+	return (
+		<>
+			<h1>Sign in</h1>
+			<a href="/login/github">Sign in with GitHub</a>
+		</>
+	);
 }
 ```
 
@@ -111,18 +108,18 @@ import { github } from "../../../lib/auth";
 import { cookies } from "next/headers";
 
 export async function GET(): Promise<Response> {
-  const state = generateState();
-  const url = await github.createAuthorizationURL(state);
+	const state = generateState();
+	const url = await github.createAuthorizationURL(state);
 
-  cookies().set("github_oauth_state", state, {
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-    maxAge: 60 * 10,
-    sameSite: "lax",
-  });
+	cookies().set("github_oauth_state", state, {
+		path: "/",
+		secure: process.env.NODE_ENV === "production",
+		httpOnly: true,
+		maxAge: 60 * 10,
+		sameSite: "lax"
+	});
 
-  return Response.redirect(url);
+	return Response.redirect(url);
 }
 ```
 
@@ -138,86 +135,75 @@ import { OAuth2RequestError } from "arctic";
 import { generateIdFromEntropySize } from "lucia";
 
 export async function GET(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
-  const storedState = cookies().get("github_oauth_state")?.value ?? null;
-  if (!code || !state || !storedState || state !== storedState) {
-    return new Response(null, {
-      status: 400,
-    });
-  }
+	const url = new URL(request.url);
+	const code = url.searchParams.get("code");
+	const state = url.searchParams.get("state");
+	const storedState = cookies().get("github_oauth_state")?.value ?? null;
+	if (!code || !state || !storedState || state !== storedState) {
+		return new Response(null, {
+			status: 400
+		});
+	}
 
-  try {
-    const tokens = await github.validateAuthorizationCode(code);
-    const githubUserResponse = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-      },
-    });
-    const githubUser: GitHubUser = await githubUserResponse.json();
+	try {
+		const tokens = await github.validateAuthorizationCode(code);
+		const githubUserResponse = await fetch("https://api.github.com/user", {
+			headers: {
+				Authorization: `Bearer ${tokens.accessToken}`
+			}
+		});
+		const githubUser: GitHubUser = await githubUserResponse.json();
 
-    // Replace this with your own DB client.
-    const existingUser = await db
-      .table("user")
-      .where("github_id", "=", githubUser.id)
-      .get();
+		// Replace this with your own DB client.
+		const existingUser = await db.table("user").where("github_id", "=", githubUser.id).get();
 
-    if (existingUser) {
-      const session = await lucia.createSession(existingUser.id, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      cookies().set(
-        sessionCookie.name,
-        sessionCookie.value,
-        sessionCookie.attributes,
-      );
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: "/",
-        },
-      });
-    }
+		if (existingUser) {
+			const session = await lucia.createSession(existingUser.id, {});
+			const sessionCookie = lucia.createSessionCookie(session.id);
+			cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+			return new Response(null, {
+				status: 302,
+				headers: {
+					Location: "/"
+				}
+			});
+		}
 
-    const userId = generateIdFromEntropySize(10); // 16 characters long
+		const userId = generateIdFromEntropySize(10); // 16 characters long
 
-    // Replace this with your own DB client.
-    await db.table("user").insert({
-      id: userId,
-      github_id: githubUser.id,
-      username: githubUser.login,
-    });
+		// Replace this with your own DB client.
+		await db.table("user").insert({
+			id: userId,
+			github_id: githubUser.id,
+			username: githubUser.login
+		});
 
-    const session = await lucia.createSession(userId, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(
-      sessionCookie.name,
-      sessionCookie.value,
-      sessionCookie.attributes,
-    );
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: "/",
-      },
-    });
-  } catch (e) {
-    // the specific error message depends on the provider
-    if (e instanceof OAuth2RequestError) {
-      // invalid code
-      return new Response(null, {
-        status: 400,
-      });
-    }
-    return new Response(null, {
-      status: 500,
-    });
-  }
+		const session = await lucia.createSession(userId, {});
+		const sessionCookie = lucia.createSessionCookie(session.id);
+		cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: "/"
+			}
+		});
+	} catch (e) {
+		// the specific error message depends on the provider
+		if (e instanceof OAuth2RequestError) {
+			// invalid code
+			return new Response(null, {
+				status: 400
+			});
+		}
+		return new Response(null, {
+			status: 500
+		});
+	}
 }
 
 interface GitHubUser {
-  id: string;
-  login: string;
+	id: string;
+	login: string;
 }
 ```
 
@@ -236,39 +222,29 @@ import type { Session, User } from "lucia";
 export const lucia = new Lucia();
 
 export const validateRequest = cache(
-  async (): Promise<
-    { user: User; session: Session } | { user: null; session: null }
-  > => {
-    const sessionId = cookies().get(lucia.sessionCookieName)?.value ?? null;
-    if (!sessionId) {
-      return {
-        user: null,
-        session: null,
-      };
-    }
+	async (): Promise<{ user: User; session: Session } | { user: null; session: null }> => {
+		const sessionId = cookies().get(lucia.sessionCookieName)?.value ?? null;
+		if (!sessionId) {
+			return {
+				user: null,
+				session: null
+			};
+		}
 
-    const result = await lucia.validateSession(sessionId);
-    // next.js throws when you attempt to set cookie when rendering page
-    try {
-      if (result.session && result.session.fresh) {
-        const sessionCookie = lucia.createSessionCookie(result.session.id);
-        cookies().set(
-          sessionCookie.name,
-          sessionCookie.value,
-          sessionCookie.attributes,
-        );
-      }
-      if (!result.session) {
-        const sessionCookie = lucia.createBlankSessionCookie();
-        cookies().set(
-          sessionCookie.name,
-          sessionCookie.value,
-          sessionCookie.attributes,
-        );
-      }
-    } catch {}
-    return result;
-  },
+		const result = await lucia.validateSession(sessionId);
+		// next.js throws when you attempt to set cookie when rendering page
+		try {
+			if (result.session && result.session.fresh) {
+				const sessionCookie = lucia.createSessionCookie(result.session.id);
+				cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+			}
+			if (!result.session) {
+				const sessionCookie = lucia.createBlankSessionCookie();
+				cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+			}
+		} catch {}
+		return result;
+	}
 );
 ```
 
@@ -279,11 +255,11 @@ import { redirect } from "next/navigation";
 import { validateRequest } from "@/lib/auth";
 
 export default async function Page() {
-  const { user } = await validateRequest();
-  if (!user) {
-    return redirect("/login");
-  }
-  return <h1>Hi, {user.username}!</h1>;
+	const { user } = await validateRequest();
+	if (!user) {
+		return redirect("/login");
+	}
+	return <h1>Hi, {user.username}!</h1>;
 }
 ```
 
@@ -297,34 +273,30 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 export default async function Page() {
-  return (
-    <form action={logout}>
-      <button>Sign out</button>
-    </form>
-  );
+	return (
+		<form action={logout}>
+			<button>Sign out</button>
+		</form>
+	);
 }
 
 async function logout(): Promise<ActionResult> {
-  "use server";
-  const { session } = await validateRequest();
-  if (!session) {
-    return {
-      error: "Unauthorized",
-    };
-  }
+	"use server";
+	const { session } = await validateRequest();
+	if (!session) {
+		return {
+			error: "Unauthorized"
+		};
+	}
 
-  await lucia.invalidateSession(session.id);
+	await lucia.invalidateSession(session.id);
 
-  const sessionCookie = lucia.createBlankSessionCookie();
-  cookies().set(
-    sessionCookie.name,
-    sessionCookie.value,
-    sessionCookie.attributes,
-  );
-  return redirect("/login");
+	const sessionCookie = lucia.createBlankSessionCookie();
+	cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+	return redirect("/login");
 }
 
 interface ActionResult {
-  error: string | null;
+	error: string | null;
 }
 ```

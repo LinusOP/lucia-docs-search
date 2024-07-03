@@ -17,23 +17,20 @@ npm install @lucia-auth/adapter-postgresql
 Initialize the adapter:
 
 ```ts
-import {
-  NodePostgresAdapter,
-  PostgresJsAdapter,
-} from "@lucia-auth/adapter-postgresql";
+import { NodePostgresAdapter, PostgresJsAdapter } from "@lucia-auth/adapter-postgresql";
 
 // previously named `pg` adapter
 new NodePostgresAdapter(pool, {
-  // table names
-  user: "auth_user",
-  session: "user_session",
+	// table names
+	user: "auth_user",
+	session: "user_session"
 });
 
 // previously named `postgres` adapter
 new PostgresJsAdapter(sql, {
-  // table names
-  user: "auth_user",
-  session: "user_session",
+	// table names
+	user: "auth_user",
+	session: "user_session"
 });
 ```
 

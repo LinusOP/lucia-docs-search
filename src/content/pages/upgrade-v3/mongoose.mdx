@@ -21,8 +21,8 @@ import { MongoDBAdapter } from "@lucia-auth/adapter-mongodb";
 import mongoose from "mongoose";
 
 const adapter = new MongodbAdapter(
-  mongoose.connection.collection("sessions"),
-  mongoose.connection.collection("users"),
+	mongoose.connection.collection("sessions"),
+	mongoose.connection.collection("users")
 );
 ```
 
@@ -32,14 +32,14 @@ Replace the `idle_expires` field with `expires_at` and update the Mongoose schem
 
 ```ts
 db.sessions.updateMany({}, [
-  {
-    $set: {
-      expires_at: { $toDate: "$idle_expires" },
-    },
-  },
-  {
-    $unset: ["idle_expires", "active_expires"],
-  },
+	{
+		$set: {
+			expires_at: { $toDate: "$idle_expires" }
+		}
+	},
+	{
+		$unset: ["idle_expires", "active_expires"]
+	}
 ]);
 ```
 
@@ -47,24 +47,24 @@ db.sessions.updateMany({}, [
 import mongoose from "mongoose";
 
 const Session = mongoose.model(
-  "Session",
-  new mongoose.Schema(
-    {
-      _id: {
-        type: String,
-        required: true,
-      },
-      user_id: {
-        type: String,
-        required: true,
-      },
-      expires_at: {
-        type: Date,
-        required: true,
-      },
-    } as const,
-    { _id: false },
-  ),
+	"Session",
+	new mongoose.Schema(
+		{
+			_id: {
+				type: String,
+				required: true
+			},
+			user_id: {
+				type: String,
+				required: true
+			},
+			expires_at: {
+				type: Date,
+				required: true
+			}
+		} as const,
+		{ _id: false }
+	)
 );
 ```
 
@@ -78,50 +78,50 @@ This database command adds a `github_id` field to users with a GitHub account ba
 
 ```ts
 db.users.aggregate([
-  {
-    $lookup: {
-      from: "keys",
-      localField: "_id",
-      foreignField: "user_id",
-      as: "github_accounts",
-      pipeline: [
-        {
-          $match: {
-            _id: {
-              $regex: /^github:/,
-            },
-          },
-        },
-      ],
-    },
-  },
-  {
-    $match: {
-      $expr: {
-        $gt: [{ $size: "$github_accounts" }, 0],
-      },
-    },
-  },
-  {
-    $set: {
-      github_id: {
-        $replaceOne: {
-          input: { $arrayElemAt: ["$github_accounts._id", 0] },
-          find: "github:",
-          replacement: "",
-        },
-      },
-    },
-  },
-  {
-    $unset: ["github_accounts"],
-  },
-  {
-    $merge: {
-      into: "users",
-      whenMatched: "merge",
-    },
-  },
+	{
+		$lookup: {
+			from: "keys",
+			localField: "_id",
+			foreignField: "user_id",
+			as: "github_accounts",
+			pipeline: [
+				{
+					$match: {
+						_id: {
+							$regex: /^github:/
+						}
+					}
+				}
+			]
+		}
+	},
+	{
+		$match: {
+			$expr: {
+				$gt: [{ $size: "$github_accounts" }, 0]
+			}
+		}
+	},
+	{
+		$set: {
+			github_id: {
+				$replaceOne: {
+					input: { $arrayElemAt: ["$github_accounts._id", 0] },
+					find: "github:",
+					replacement: ""
+				}
+			}
+		}
+	},
+	{
+		$unset: ["github_accounts"]
+	},
+	{
+		$merge: {
+			into: "users",
+			whenMatched: "merge"
+		}
+	}
 ]);
 ```
 
@@ -131,45 +131,43 @@ This database command moves the `hashed_password` field from the keys collection
 
 ```ts
 db.users.aggregate([
-  {
-    $lookup: {
-      from: "keys",
-      localField: "_id",
-      foreignField: "user_id",
-      as: "password_accounts",
-      pipeline: [
-        {
-          $match: {
-            hashed_password: {
-              $ne: null,
-            },
-          },
-        },
-      ],
-    },
-  },
-  {
-    $match: {
-      $expr: {
-        $gt: [{ $size: "$password_accounts" }, 0],
-      },
-    },
-  },
-  {
-    $set: {
-      hashed_password: {
-        $arrayElemAt: ["$password_accounts.hashed_password", 0],
-      },
-    },
-  },
-  {
-    $unset: ["password_accounts"],
-  },
-  {
-    $merge: {
-      into: "users",
-      whenMatched: "merge",
-    },
-  },
+	{
+		$lookup: {
+			from: "keys",
+			localField: "_id",
+			foreignField: "user_id",
+			as: "password_accounts",
+			pipeline: [
+				{
+					$match: {
+						hashed_password: {
+							$ne: null
+						}
+					}
+				}
+			]
+		}
+	},
+	{
+		$match: {
+			$expr: {
+				$gt: [{ $size: "$password_accounts" }, 0]
+			}
+		}
+	},
+	{
+		$set: {
+			hashed_password: { $arrayElemAt: ["$password_accounts.hashed_password", 0] }
+		}
+	},
+	{
+		$unset: ["password_accounts"]
+	},
+	{
+		$merge: {
+			into: "users",
+			whenMatched: "merge"
+		}
+	}
 ]);
 ```

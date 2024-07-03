@@ -12,12 +12,10 @@ Method of [`Lucia`](/reference/main/Lucia). Validates a session with the session
 //$ User=/reference/main/User
 //$ Session=/reference/main/Session
 function validateSession(
-  sessionId: string,
-): Promise<
-  { user: $$User; session: $$Session } | { user: null; session: null }
->;
+	sessionId: string
+): Promise<{ user: $$User; session: $$Session } | { user: null; session: null }>;
 ```
 
 ### Parameters
 
-- `sessionId`
+-   `sessionId`

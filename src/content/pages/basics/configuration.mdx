@@ -8,14 +8,12 @@ This page shows all the options for [`Lucia`](/reference/main/Lucia) to configur
 
 ```ts
 interface Options {
-  sessionExpiresIn?: TimeSpan;
-  sessionCookie?: SessionCookieOptions;
-  getSessionAttributes?: (
-    databaseSessionAttributes: DatabaseSessionAttributes,
-  ) => _SessionAttributes;
-  getUserAttributes?: (
-    databaseUserAttributes: DatabaseUserAttributes,
-  ) => _UserAttributes;
+	sessionExpiresIn?: TimeSpan;
+	sessionCookie?: SessionCookieOptions;
+	getSessionAttributes?: (
+		databaseSessionAttributes: DatabaseSessionAttributes
+	) => _SessionAttributes;
+	getUserAttributes?: (databaseUserAttributes: DatabaseUserAttributes) => _UserAttributes;
 }
 ```
 
@@ -27,7 +25,7 @@ Configures how long a session stays valid for inactive users. Session expiration
 import { Lucia, TimeSpan } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  sessionExpiresIn: new TimeSpan(2, "w"),
+	sessionExpiresIn: new TimeSpan(2, "w")
 });
 ```
 
@@ -39,15 +37,15 @@ Configures the session cookie.
 import { Lucia } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    name: "session",
-    expires: false, // session cookies have very long lifespan (2 years)
-    attributes: {
-      secure: true,
-      sameSite: "strict",
-      domain: "example.com",
-    },
-  },
+	sessionCookie: {
+		name: "session",
+		expires: false, // session cookies have very long lifespan (2 years)
+		attributes: {
+			secure: true,
+			sameSite: "strict",
+			domain: "example.com"
+		}
+	}
 });
 ```
 
@@ -59,22 +57,22 @@ Transforms database session attributes, which is typed as `DatabaseSessionAttrib
 import { Lucia } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  getSessionAttributes: (attributes) => {
-    return {
-      country: attributes.country,
-    };
-  },
+	getSessionAttributes: (attributes) => {
+		return {
+			country: attributes.country
+		};
+	}
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseSessionAttributes: DatabaseSessionAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseSessionAttributes: DatabaseSessionAttributes;
+	}
 }
 
 interface DatabaseSessionAttributes {
-  country: string;
+	country: string;
 }
 ```
 
@@ -86,21 +84,21 @@ Transforms database user attributes, which is typed as `DatabaseUserAttributes`.
 import { Lucia } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  getUserAttributes: (attributes) => {
-    return {
-      username: attributes.username,
-    };
-  },
+	getUserAttributes: (attributes) => {
+		return {
+			username: attributes.username
+		};
+	}
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseUserAttributes {
-  username: string;
+	username: string;
 }
 ```

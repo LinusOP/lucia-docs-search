@@ -39,30 +39,30 @@ import { Lucia } from "lucia";
 import { dev } from "$app/environment";
 
 export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: !dev,
-    },
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      // attributes has the type of DatabaseUserAttributes
-      githubId: attributes.github_id,
-      username: attributes.username,
-    };
-  },
+	sessionCookie: {
+		attributes: {
+			secure: !dev
+		}
+	},
+	getUserAttributes: (attributes) => {
+		return {
+			// attributes has the type of DatabaseUserAttributes
+			githubId: attributes.github_id,
+			username: attributes.username
+		};
+	}
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseUserAttributes {
-  github_id: number;
-  username: string;
+	github_id: number;
+	username: string;
 }
 ```
 
@@ -108,18 +108,18 @@ import { github } from "$lib/server/auth";
 import type { RequestEvent } from "@sveltejs/kit";
 
 export async function GET(event: RequestEvent): Promise<Response> {
-  const state = generateState();
-  const url = await github.createAuthorizationURL(state);
+	const state = generateState();
+	const url = await github.createAuthorizationURL(state);
 
-  event.cookies.set("github_oauth_state", state, {
-    path: "/",
-    secure: import.meta.env.PROD,
-    httpOnly: true,
-    maxAge: 60 * 10,
-    sameSite: "lax",
-  });
+	event.cookies.set("github_oauth_state", state, {
+		path: "/",
+		secure: import.meta.env.PROD,
+		httpOnly: true,
+		maxAge: 60 * 10,
+		sameSite: "lax"
+	});
 
-  redirect(302, url.toString());
+	redirect(302, url.toString());
 }
 ```
 
@@ -136,78 +136,75 @@ import { github, lucia } from "$lib/server/auth";
 import type { RequestEvent } from "@sveltejs/kit";
 
 export async function GET(event: RequestEvent): Promise<Response> {
-  const code = event.url.searchParams.get("code");
-  const state = event.url.searchParams.get("state");
-  const storedState = event.cookies.get("github_oauth_state") ?? null;
+	const code = event.url.searchParams.get("code");
+	const state = event.url.searchParams.get("state");
+	const storedState = event.cookies.get("github_oauth_state") ?? null;
 
-  if (!code || !state || !storedState || state !== storedState) {
-    return new Response(null, {
-      status: 400,
-    });
-  }
+	if (!code || !state || !storedState || state !== storedState) {
+		return new Response(null, {
+			status: 400
+		});
+	}
 
-  try {
-    const tokens = await github.validateAuthorizationCode(code);
-    const githubUserResponse = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-      },
-    });
-    const githubUser: GitHubUser = await githubUserResponse.json();
+	try {
+		const tokens = await github.validateAuthorizationCode(code);
+		const githubUserResponse = await fetch("https://api.github.com/user", {
+			headers: {
+				Authorization: `Bearer ${tokens.accessToken}`
+			}
+		});
+		const githubUser: GitHubUser = await githubUserResponse.json();
 
-    // Replace this with your own DB client.
-    const existingUser = await db
-      .table("user")
-      .where("github_id", "=", githubUser.id)
-      .get();
+		// Replace this with your own DB client.
+		const existingUser = await db.table("user").where("github_id", "=", githubUser.id).get();
 
-    if (existingUser) {
-      const session = await lucia.createSession(existingUser.id, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      event.cookies.set(sessionCookie.name, sessionCookie.value, {
-        path: ".",
-        ...sessionCookie.attributes,
-      });
-    } else {
-      const userId = generateIdFromEntropySize(10); // 16 characters long
+		if (existingUser) {
+			const session = await lucia.createSession(existingUser.id, {});
+			const sessionCookie = lucia.createSessionCookie(session.id);
+			event.cookies.set(sessionCookie.name, sessionCookie.value, {
+				path: ".",
+				...sessionCookie.attributes
+			});
+		} else {
+			const userId = generateIdFromEntropySize(10); // 16 characters long
 
-      // Replace this with your own DB client.
-      await db.table("user").insert({
-        id: userId,
-        github_id: githubUser.id,
-        username: githubUser.login,
-      });
+			// Replace this with your own DB client.
+			await db.table("user").insert({
+				id: userId,
+				github_id: githubUser.id,
+				username: githubUser.login
+			});
 
-      const session = await lucia.createSession(userId, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      event.cookies.set(sessionCookie.name, sessionCookie.value, {
-        path: ".",
-        ...sessionCookie.attributes,
-      });
-    }
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: "/",
-      },
-    });
-  } catch (e) {
-    // the specific error message depends on the provider
-    if (e instanceof OAuth2RequestError) {
-      // invalid code
-      return new Response(null, {
-        status: 400,
-      });
-    }
-    return new Response(null, {
-      status: 500,
-    });
-  }
+			const session = await lucia.createSession(userId, {});
+			const sessionCookie = lucia.createSessionCookie(session.id);
+			event.cookies.set(sessionCookie.name, sessionCookie.value, {
+				path: ".",
+				...sessionCookie.attributes
+			});
+		}
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: "/"
+			}
+		});
+	} catch (e) {
+		// the specific error message depends on the provider
+		if (e instanceof OAuth2RequestError) {
+			// invalid code
+			return new Response(null, {
+				status: 400
+			});
+		}
+		return new Response(null, {
+			status: 500
+		});
+	}
 }
 
 interface GitHubUser {
-  id: number;
-  login: string;
+	id: number;
+	login: string;
 }
 ```
 
@@ -220,11 +217,11 @@ You can validate requests by checking `locals.user`. The field `user.username` i
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async (event) => {
-  if (!event.locals.user) redirect(302, "/login");
+	if (!event.locals.user) redirect(302, "/login");
 
-  return {
-    username: event.locals.user.username,
-  };
+	return {
+		username: event.locals.user.username
+	};
 };
 ```
 
@@ -240,22 +237,22 @@ import { lucia } from "$lib/server/auth";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
-  // ...
+	// ...
 };
 
 export const actions: Actions = {
-  default: async (event) => {
-    if (!event.locals.session) {
-      return fail(401);
-    }
-    await lucia.invalidateSession(event.locals.session.id);
-    const sessionCookie = lucia.createBlankSessionCookie();
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: ".",
-      ...sessionCookie.attributes,
-    });
-    redirect(302, "/login");
-  },
+	default: async (event) => {
+		if (!event.locals.session) {
+			return fail(401);
+		}
+		await lucia.invalidateSession(event.locals.session.id);
+		const sessionCookie = lucia.createBlankSessionCookie();
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: ".",
+			...sessionCookie.attributes
+		});
+		redirect(302, "/login");
+	}
 };
 ```
 

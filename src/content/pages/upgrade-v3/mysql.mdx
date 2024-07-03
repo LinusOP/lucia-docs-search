@@ -20,15 +20,15 @@ Initialize the adapter:
 import { Mysql2Adapter, PlanetScaleAdapter } from "@lucia-auth/adapter-mysql";
 
 new Mysql2Adapter(pool, {
-  // table names
-  user: "user",
-  session: "user_session",
+	// table names
+	user: "user",
+	session: "user_session"
 });
 
 new PlanetScaleAdapter(connection, {
-  // table names
-  user: "user",
-  session: "user_session",
+	// table names
+	user: "user",
+	session: "user_session"
 });
 ```
 

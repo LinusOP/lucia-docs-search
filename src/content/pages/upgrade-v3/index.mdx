@@ -16,18 +16,18 @@ For a simple password-based auth, the password can just be stored in the user ta
 
 ```ts
 const passwordHash = await hash(password, {
-  // recommended minimum parameters
-  memoryCost: 19456,
-  timeCost: 2,
-  outputLen: 32,
-  parallelism: 1,
+	// recommended minimum parameters
+	memoryCost: 19456,
+	timeCost: 2,
+	outputLen: 32,
+	parallelism: 1
 });
 const userId = generateIdFromEntropySize(10); // 16 characters long
 
 await db.table("user").insert({
-  id: userId,
-  email,
-  password_hash: passwordHash,
+	id: userId,
+	email,
+	password_hash: passwordHash
 });
 ```
 
@@ -48,11 +48,11 @@ import { Lucia, TimeSpan } from "lucia";
 import { astro } from "lucia/middleware";
 
 export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: env === "PRODUCTION", // replaces `env` config
-    },
-  },
+	sessionCookie: {
+		attributes: {
+			secure: env === "PRODUCTION" // replaces `env` config
+		}
+	}
 });
 ```
 
@@ -63,26 +63,26 @@ import { Lucia, TimeSpan } from "lucia";
 import { astro } from "lucia/middleware";
 
 export const lucia = new Lucia(adapter, {
-  getSessionAttributes: (attributes) => {
-    return {
-      ipCountry: attributes.ip_country,
-    };
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      username: attributes.username,
-    };
-  },
-  sessionExpiresIn: new TimeSpan(30, "d"), // no more active/idle
-  sessionCookie: {
-    name: "session",
-    expires: false, // session cookies have very long lifespan (2 years)
-    attributes: {
-      secure: true,
-      sameSite: "strict",
-      domain: "example.com",
-    },
-  },
+	getSessionAttributes: (attributes) => {
+		return {
+			ipCountry: attributes.ip_country
+		};
+	},
+	getUserAttributes: (attributes) => {
+		return {
+			username: attributes.username
+		};
+	},
+	sessionExpiresIn: new TimeSpan(30, "d"), // no more active/idle
+	sessionCookie: {
+		name: "session",
+		expires: false, // session cookies have very long lifespan (2 years)
+		attributes: {
+			secure: true,
+			sameSite: "strict",
+			domain: "example.com"
+		}
+	}
 });
 ```
 
@@ -94,18 +94,18 @@ Lucia v3 uses the newer module syntax instead of `.d.ts` files for declaring typ
 export const lucia = new Lucia();
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseSessionAttributes: DatabaseSessionAttributes;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseSessionAttributes: DatabaseSessionAttributes;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseSessionAttributes {
-  country: string;
+	country: string;
 }
 interface DatabaseUserAttributes {
-  username: string;
+	username: string;
 }
 ```
 
@@ -123,17 +123,17 @@ globalThis.crypto = webcrypto as Crypto;
 
 Refer to each database migration guide:
 
-- [Mongoose](/upgrade-v3/mongoose)
-- [MySQL](/upgrade-v3/mysql)
-- [PostgreSQL](/upgrade-v3/postgresql)
-- [Prisma](/upgrade-v3/prisma)
-- [SQLite](/upgrade-v3/sqlite)
+-   [Mongoose](/upgrade-v3/mongoose)
+-   [MySQL](/upgrade-v3/mysql)
+-   [PostgreSQL](/upgrade-v3/postgresql)
+-   [Prisma](/upgrade-v3/prisma)
+-   [SQLite](/upgrade-v3/sqlite)
 
 The following packages are deprecated:
 
-- `@lucia-auth/adapter-mongoose` (see Mongoose migration guide)
-- `@lucia-auth/adapter-session-redis`
-- `@lucia-auth/adapter-session-unstorage`
+-   `@lucia-auth/adapter-mongoose` (see Mongoose migration guide)
+-   `@lucia-auth/adapter-session-redis`
+-   `@lucia-auth/adapter-session-unstorage`
 
 If you're using a session adapter, we recommend building a custom adapter as the API has been greatly simplified.
 
@@ -143,14 +143,14 @@ If you're using a session adapter, we recommend building a custom adapter as the
 
 Middleware, `Auth.handleRequest()`, and `AuthRequest` have been removed. **This means Lucia no longer provides strict CSRF protection**. For replacing `AuthRequest.validate()`, see the [Validating session cookies](/guides/validate-session-cookies) guide or a framework-specific version of it as these need to be re-implemented from scratch (though it's just copy-pasting code from the guides):
 
-- [Astro](/guides/validate-session-cookies/astro)
-- [Elysia](/guides/validate-session-cookies/elysia)
-- [Express](/guides/validate-session-cookies/express)
-- [Hono](/guides/validate-session-cookies/hono)
-- [Next.js App router](/guides/validate-session-cookies/nextjs-app)
-- [Next.js Pages router](/guides/validate-session-cookies/nextjs-pages)
-- [Nuxt](/guides/validate-session-cookies/nuxt)
-- [SvelteKit](/guides/validate-session-cookies/sveltekit)
+-   [Astro](/guides/validate-session-cookies/astro)
+-   [Elysia](/guides/validate-session-cookies/elysia)
+-   [Express](/guides/validate-session-cookies/express)
+-   [Hono](/guides/validate-session-cookies/hono)
+-   [Next.js App router](/guides/validate-session-cookies/nextjs-app)
+-   [Next.js Pages router](/guides/validate-session-cookies/nextjs-pages)
+-   [Nuxt](/guides/validate-session-cookies/nuxt)
+-   [SvelteKit](/guides/validate-session-cookies/sveltekit)
 
 `Session.sessionId` has been renamed to `Session.id`
 
@@ -164,7 +164,7 @@ const sessionId = session.id;
 // v3
 const { session, user } = await auth.validateSession(sessionId);
 if (!session) {
-  // invalid session
+	// invalid session
 }
 ```
 
@@ -181,5 +181,5 @@ const blankSessionCookie = auth.createBlankSessionCookie();
 
 Refer to these guides:
 
-- [Upgrade OAuth setup to v3](/upgrade-v3/oauth)
-- [Upgrade Password-based auth to v3](/upgrade-v3/password)
+-   [Upgrade OAuth setup to v3](/upgrade-v3/oauth)
+-   [Upgrade Password-based auth to v3](/upgrade-v3/password)

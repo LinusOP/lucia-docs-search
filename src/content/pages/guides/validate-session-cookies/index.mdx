@@ -6,15 +6,15 @@ title: "Validate session cookies"
 
 This guide is also available for:
 
-- [Astro](/guides/validate-session-cookies/astro)
-- [Elysia](/guides/validate-session-cookies/elysia)
-- [Express](/guides/validate-session-cookies/express)
-- [Hono](/guides/validate-session-cookies/hono)
-- [Next.js App router](/guides/validate-session-cookies/nextjs-app)
-- [Next.js Pages router](/guides/validate-session-cookies/nextjs-pages)
-- [Nuxt](/guides/validate-session-cookies/nuxt)
-- [SolidStart](/guides/validate-session-cookies/solidstart)
-- [SvelteKit](/guides/validate-session-cookies/sveltekit)
+-   [Astro](/guides/validate-session-cookies/astro)
+-   [Elysia](/guides/validate-session-cookies/elysia)
+-   [Express](/guides/validate-session-cookies/express)
+-   [Hono](/guides/validate-session-cookies/hono)
+-   [Next.js App router](/guides/validate-session-cookies/nextjs-app)
+-   [Next.js Pages router](/guides/validate-session-cookies/nextjs-pages)
+-   [Nuxt](/guides/validate-session-cookies/nuxt)
+-   [SolidStart](/guides/validate-session-cookies/solidstart)
+-   [SvelteKit](/guides/validate-session-cookies/sveltekit)
 
 **CSRF protection must be implemented when using cookies and forms.** This can be easily done by comparing the `Origin` and `Host` header.
 
@@ -27,35 +27,31 @@ import { verifyRequestOrigin } from "lucia";
 const originHeader = request.headers.get("Origin");
 // NOTE: You may need to use `X-Forwarded-Host` instead
 const hostHeader = request.headers.get("Host");
-if (
-  !originHeader ||
-  !hostHeader ||
-  !verifyRequestOrigin(originHeader, [hostHeader])
-) {
-  return new Response(null, {
-    status: 403,
-  });
+if (!originHeader || !hostHeader || !verifyRequestOrigin(originHeader, [hostHeader])) {
+	return new Response(null, {
+		status: 403
+	});
 }
 
 const cookieHeader = request.headers.get("Cookie");
 const sessionId = lucia.readSessionCookie(cookieHeader ?? "");
 if (!sessionId) {
-  return new Response(null, {
-    status: 401,
-  });
+	return new Response(null, {
+		status: 401
+	});
 }
 
 const headers = new Headers();
 
 const { session, user } = await lucia.validateSession(sessionId);
 if (!session) {
-  const sessionCookie = lucia.createBlankSessionCookie();
-  headers.append("Set-Cookie", sessionCookie.serialize());
+	const sessionCookie = lucia.createBlankSessionCookie();
+	headers.append("Set-Cookie", sessionCookie.serialize());
 }
 
 if (session && session.fresh) {
-  const sessionCookie = lucia.createSessionCookie(session.id);
-  headers.append("Set-Cookie", sessionCookie.serialize());
+	const sessionCookie = lucia.createSessionCookie(session.id);
+	headers.append("Set-Cookie", sessionCookie.serialize());
 }
 ```
 

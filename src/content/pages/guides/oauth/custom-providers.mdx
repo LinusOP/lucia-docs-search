@@ -16,14 +16,9 @@ import { OAuth2Client } from "oslo/oauth2";
 const authorizeEndpoint = "https://github.com/login/oauth/authorize";
 const tokenEndpoint = "https://github.com/login/oauth/access_token";
 
-const oauth2Client = new OAuth2Client(
-  clientId,
-  authorizeEndpoint,
-  tokenEndpoint,
-  {
-    redirectURI: "http://localhost:3000/login/github/callback",
-  },
-);
+const oauth2Client = new OAuth2Client(clientId, authorizeEndpoint, tokenEndpoint, {
+	redirectURI: "http://localhost:3000/login/github/callback"
+});
 ```
 
 ## Create authorization URL
@@ -37,9 +32,9 @@ const state = generateState();
 const codeVerifier = generateCodeVerifier(); // for PKCE flow
 
 const url = await oauth2Client.createAuthorizationURL({
-  state,
-  scopes: ["user:email"],
-  codeVerifier,
+	state,
+	scopes: ["user:email"],
+	codeVerifier
 });
 ```
 
@@ -53,19 +48,18 @@ You can add additional response JSON fields by passing a type.
 
 ```ts
 try {
-  const { accessToken, refreshToken } =
-    await oauth2Client.validateAuthorizationCode<{
-      refreshToken: string;
-    }>(code, {
-      credentials: clientSecret,
-      authenticateWith: "request_body",
-    });
+	const { accessToken, refreshToken } = await oauth2Client.validateAuthorizationCode<{
+		refreshToken: string;
+	}>(code, {
+		credentials: clientSecret,
+		authenticateWith: "request_body"
+	});
 } catch (e) {
-  if (e instanceof OAuth2RequestError) {
-    // see https://www.rfc-editor.org/rfc/rfc6749#section-5.2
-    const { request, message, description } = e;
-  }
-  // unknown error
+	if (e instanceof OAuth2RequestError) {
+		// see https://www.rfc-editor.org/rfc/rfc6749#section-5.2
+		const { request, message, description } = e;
+	}
+	// unknown error
 }
 ```
 
@@ -73,10 +67,10 @@ For PKCE flow, pass the `codeVerifier` as an option.
 
 ```ts
 await oauth2Client.validateAuthorizationCode<{
-  refreshToken: string;
+	refreshToken: string;
 }>(code, {
-  credentials: clientSecret,
-  codeVerifier,
+	credentials: clientSecret,
+	codeVerifier
 });
 ```
 
@@ -86,17 +80,17 @@ Use [`OAuth2Client.refreshAccessToken()`](https://oslo.js.org/reference/oauth2/O
 
 ```ts
 try {
-  const { accessToken, refreshToken } = await oauth2Client.refreshAccessToken<{
-    refreshToken: string;
-  }>(code, {
-    credentials: clientSecret,
-    authenticateWith: "request_body",
-  });
+	const { accessToken, refreshToken } = await oauth2Client.refreshAccessToken<{
+		refreshToken: string;
+	}>(code, {
+		credentials: clientSecret,
+		authenticateWith: "request_body"
+	});
 } catch (e) {
-  if (e instanceof OAuth2RequestError) {
-    // see https://www.rfc-editor.org/rfc/rfc6749#section-5.2
-    const { request, message, description } = e;
-  }
-  // unknown error
+	if (e instanceof OAuth2RequestError) {
+		// see https://www.rfc-editor.org/rfc/rfc6749#section-5.2
+		const { request, message, description } = e;
+	}
+	// unknown error
 }
 ```

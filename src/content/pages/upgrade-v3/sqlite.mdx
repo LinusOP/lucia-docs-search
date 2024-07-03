@@ -18,27 +18,27 @@ Initialize the adapter:
 
 ```ts
 import {
-  BetterSqlite3Adapter,
-  CloudflareD1Adapter,
-  LibSQLAdapter,
+	BetterSqlite3Adapter,
+	CloudflareD1Adapter,
+	LibSQLAdapter
 } from "@lucia-auth/adapter-sqlite";
 
 new BetterSqlite3Adapter(db, {
-  // table names
-  user: "user",
-  session: "session",
+	// table names
+	user: "user",
+	session: "session"
 });
 
 new CloudflareD1Adapter(d1, {
-  // table names
-  user: "user",
-  session: "session",
+	// table names
+	user: "user",
+	session: "session"
 });
 
 new LibSQLAdapter(db, {
-  // table names
-  user: "user",
-  session: "session",
+	// table names
+	user: "user",
+	session: "session"
 });
 ```
 

@@ -8,7 +8,7 @@ While Lucia does not provide APIs for creating and managing users, it still inte
 
 ```ts
 interface Session extends UserAttributes {
-  id: string;
+	id: string;
 }
 ```
 
@@ -20,8 +20,8 @@ When creating users, you can use [`generateIdFromEntropySize()`](/reference/main
 import { generateIdFromEntropySize } from "lucia";
 
 await db.createUser({
-  // 16 characters long
-  id: generateIdFromEntropySize(10),
+	// 16 characters long
+	id: generateIdFromEntropySize(10)
 });
 ```
 
@@ -43,14 +43,14 @@ Defining custom user attributes requires 2 steps. First, add the required column
 
 ```ts
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseUserAttributes {
-  username: string;
+	username: string;
 }
 ```
 
@@ -58,16 +58,16 @@ You can then include them in the user object with the `getUserAttributes()` conf
 
 ```ts
 const lucia = new Lucia(adapter, {
-  getUserAttributes: (attributes) => {
-    return {
-      username: attributes.username,
-    };
-  },
+	getUserAttributes: (attributes) => {
+		return {
+			username: attributes.username
+		};
+	}
 });
 
 const { user } = await lucia.validateSession();
 if (user) {
-  const username = user.username;
+	const username = user.username;
 }
 ```
 
@@ -82,10 +82,10 @@ User IDs are typed as strings by default. You can override this by declaring `Re
 
 ```ts
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    UserId: number;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		UserId: number;
+	}
 }
 
 const session = await lucia.createSession(0, {});

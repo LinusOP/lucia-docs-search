@@ -71,24 +71,24 @@ Another approach is to let users manually add OAuth accounts from their profile/
 ```ts
 const { user } = await lucia.validateSession();
 if (!user) {
-  return new Response(null, {
-    status: 401,
-  });
+	return new Response(null, {
+		status: 401
+	});
 }
 
 const tokens = await github.validateAuthorizationCode(code);
 const userResponse = await fetch("https://api.github.com/user", {
-  headers: {
-    Authorization: `Bearer ${tokens.accessToken}`,
-  },
+	headers: {
+		Authorization: `Bearer ${tokens.accessToken}`
+	}
 });
 const githubUser = await userResponse.json();
 
 // TODO: check if github account is already linked to a user
 
 await db.table("oauth_account").insert({
-  provider_id: "github",
-  provider_user_id: githubUser.id,
-  user_id: user.id,
+	provider_id: "github",
+	provider_user_id: githubUser.id,
+	user_id: user.id
 });
 ```

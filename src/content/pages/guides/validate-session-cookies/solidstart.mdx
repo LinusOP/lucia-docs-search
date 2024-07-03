@@ -10,58 +10,45 @@ We recommend creating a middleware to validate requests and store the current us
 
 ```ts
 // src/middleware.ts
-import {
-  createMiddleware,
-  appendHeader,
-  getCookie,
-  getHeader,
-} from "@solidjs/start/server";
+import { createMiddleware, appendHeader, getCookie, getHeader } from "@solidjs/start/server";
 import { Session, User, verifyRequestOrigin } from "lucia";
 import { lucia } from "./lib/auth";
 
 export default defineEventHandler((event) => {
-  if (context.request.method !== "GET") {
-    const originHeader = getHeader(event, "Origin") ?? null;
-    // NOTE: You may need to use `X-Forwarded-Host` instead
-    const hostHeader = getHeader(event, "Host") ?? null;
-    if (
-      !originHeader ||
-      !hostHeader ||
-      !verifyRequestOrigin(originHeader, [hostHeader])
-    ) {
-      return event.node.res.writeHead(403).end();
-    }
-  }
+	if (context.request.method !== "GET") {
+		const originHeader = getHeader(event, "Origin") ?? null;
+		// NOTE: You may need to use `X-Forwarded-Host` instead
+		const hostHeader = getHeader(event, "Host") ?? null;
+		if (!originHeader || !hostHeader || !verifyRequestOrigin(originHeader, [hostHeader])) {
+			return event.node.res.writeHead(403).end();
+		}
+	}
 
-  const sessionId = getCookie(event, lucia.sessionCookieName) ?? null;
-  if (!sessionId) {
-    event.context.user = null;
-    return;
-  }
+	const sessionId = getCookie(event, lucia.sessionCookieName) ?? null;
+	if (!sessionId) {
+		event.context.user = null;
+		return;
+	}
 
-  const { session, user } = await lucia.validateSession(sessionId);
-  if (session && session.fresh) {
-    appendResponseHeader(
-      event,
-      "Set-Cookie",
-      lucia.createSessionCookie(session.id).serialize(),
-    );
-  }
-  if (!session) {
-    appendResponseHeader(
-      event,
-      "Set-Cookie",
-      lucia.createBlankSessionCookie().serialize(),
-    );
-  }
-  event.context.user = user;
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (session && session.fresh) {
+		appendResponseHeader(
+			event,
+			"Set-Cookie",
+			lucia.createSessionCookie(session.id).serialize()
+		);
+	}
+	if (!session) {
+		appendResponseHeader(event, "Set-Cookie", lucia.createBlankSessionCookie().serialize());
+	}
+	event.context.user = user;
 });
 
 declare module "vinxi/server" {
-  interface H3EventContext {
-    user: User | null;
-    session: Session | null;
-  }
+	interface H3EventContext {
+		user: User | null;
+		session: Session | null;
+	}
 }
 ```
 
@@ -72,9 +59,9 @@ Make sure to declare the middleware module in the config.
 import { defineConfig } from "@solidjs/start/config";
 
 export default defineConfig({
-  start: {
-    middleware: "./src/middleware.ts",
-  },
+	start: {
+		middleware: "./src/middleware.ts"
+	}
 });
 ```
 

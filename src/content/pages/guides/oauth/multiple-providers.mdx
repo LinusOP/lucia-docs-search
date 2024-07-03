@@ -37,28 +37,28 @@ const tokens = await githubAuth.validateAuthorizationCode(code);
 const githubUser = await githubAuth.getUser(tokens.accessToken);
 
 const existingAccount = await db
-  .table("oauth_account")
-  .where("provider_id", "=", "github")
-  .where("provider_user_id", "=", githubUser.id)
-  .get();
+	.table("oauth_account")
+	.where("provider_id", "=", "github")
+	.where("provider_user_id", "=", githubUser.id)
+	.get();
 
 if (existingAccount) {
-  const session = await lucia.createSession(existingAccount.user_id, {});
+	const session = await lucia.createSession(existingAccount.user_id, {});
 
-  // ...
+	// ...
 }
 
 const userId = generateIdFromEntropySize(10); // 16 characters long
 
 await db.beginTransaction();
 await db.table("user").insert({
-  id: userId,
-  username: githubUser.login,
+	id: userId,
+	username: githubUser.login
 });
 await db.table("oauth_account").insert({
-  provider_id: "github",
-  provider_user_id: githubUser.id,
-  user_id: userId,
+	provider_id: "github",
+	provider_user_id: githubUser.id,
+	user_id: userId
 });
 await db.commit();
 

@@ -14,13 +14,13 @@ Make sure you've registered your types. Check that the `typeof lucia` is indeed 
 import { Lucia } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  // no ts errors
+	// no ts errors
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+	}
 }
 ```
 
@@ -34,11 +34,11 @@ By default, session cookies have a `Secure` flag, which requires HTTPS. You can 
 import { Lucia } from "lucia";
 
 const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: !devMode, // disable when `devMode` is `true`
-    },
-  },
+	sessionCookie: {
+		attributes: {
+			secure: !devMode // disable when `devMode` is `true`
+		}
+	}
 });
 ```
 

@@ -13,31 +13,31 @@ import { lucia } from "$lib/server/auth";
 import type { Handle } from "@sveltejs/kit";
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const sessionId = event.cookies.get(lucia.sessionCookieName);
-  if (!sessionId) {
-    event.locals.user = null;
-    event.locals.session = null;
-    return resolve(event);
-  }
+	const sessionId = event.cookies.get(lucia.sessionCookieName);
+	if (!sessionId) {
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
+	}
 
-  const { session, user } = await lucia.validateSession(sessionId);
-  if (session && session.fresh) {
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: ".",
-      ...sessionCookie.attributes,
-    });
-  }
-  if (!session) {
-    const sessionCookie = lucia.createBlankSessionCookie();
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: ".",
-      ...sessionCookie.attributes,
-    });
-  }
-  event.locals.user = user;
-  event.locals.session = session;
-  return resolve(event);
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (session && session.fresh) {
+		const sessionCookie = lucia.createSessionCookie(session.id);
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: ".",
+			...sessionCookie.attributes
+		});
+	}
+	if (!session) {
+		const sessionCookie = lucia.createBlankSessionCookie();
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: ".",
+			...sessionCookie.attributes
+		});
+	}
+	event.locals.user = user;
+	event.locals.session = session;
+	return resolve(event);
 };
 ```
 
@@ -46,12 +46,12 @@ Make sure to type `App.Locals` as well.
 ```ts
 // src/app.d.ts
 declare global {
-  namespace App {
-    interface Locals {
-      user: import("lucia").User;
-      session: import("lucia").Session;
-    }
-  }
+	namespace App {
+		interface Locals {
+			user: import("lucia").User;
+			session: import("lucia").Session;
+		}
+	}
 }
 ```
 
@@ -65,19 +65,19 @@ import { fail, redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async (event) => {
-  if (!event.locals.user) {
-    redirect("/login");
-  }
-  // ...
+	if (!event.locals.user) {
+		redirect("/login");
+	}
+	// ...
 };
 
 export const actions: Actions = {
-  default: async (event) => {
-    if (!event.locals.user) {
-      throw fail(401);
-    }
-    // ...
-  },
+	default: async (event) => {
+		if (!event.locals.user) {
+			throw fail(401);
+		}
+		// ...
+	}
 };
 ```
 
@@ -86,11 +86,11 @@ export const actions: Actions = {
 import { lucia } from "$lib/server/auth";
 
 export function GET(event: RequestEvent): Promise<Response> {
-  if (!event.locals.user) {
-    return new Response(null, {
-      status: 401,
-    });
-  }
-  // ...
+	if (!event.locals.user) {
+		return new Response(null, {
+			status: 401
+		});
+	}
+	// ...
 }
 ```

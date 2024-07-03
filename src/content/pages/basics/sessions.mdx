@@ -8,10 +8,10 @@ Sessions allow Lucia to keep track of requests made by authenticated users. The 
 
 ```ts
 interface Session extends SessionAttributes {
-  id: string;
-  userId: string;
-  expiresAt: Date;
-  fresh: boolean;
+	id: string;
+	userId: string;
+	expiresAt: Date;
+	fresh: boolean;
 }
 ```
 
@@ -25,7 +25,7 @@ More specifically, if the session expiration is set to 30 days (default), Lucia 
 import { Lucia, TimeSpan } from "lucia";
 
 export const lucia = new Lucia(adapter, {
-  sessionExpiresIn: new TimeSpan(2, "w"), // 2 weeks
+	sessionExpiresIn: new TimeSpan(2, "w") // 2 weeks
 });
 ```
 
@@ -35,13 +35,13 @@ Defining custom session attributes requires 2 steps. First, add the required col
 
 ```ts
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseSessionAttributes: DatabaseSessionAttributes;
-  }
-  interface DatabaseSessionAttributes {
-    ip_country: string;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseSessionAttributes: DatabaseSessionAttributes;
+	}
+	interface DatabaseSessionAttributes {
+		ip_country: string;
+	}
 }
 ```
 
@@ -49,11 +49,11 @@ You can then include them in the session object with the `getSessionAttributes()
 
 ```ts
 const lucia = new Lucia(adapter, {
-  getSessionAttributes: (attributes) => {
-    return {
-      ipCountry: attributes.ip_country,
-    };
-  },
+	getSessionAttributes: (attributes) => {
+		return {
+			ipCountry: attributes.ip_country
+		};
+	}
 });
 
 const session = await lucia.createSession();
@@ -77,19 +77,29 @@ If you have database attributes defined, pass their values as the second argumen
 
 ```ts
 const session = await lucia.createSession(userId, {
-  country: "us",
+	country: "us"
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseSessionAttributes: DatabaseSessionAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseSessionAttributes: DatabaseSessionAttributes;
+	}
 }
 
 interface DatabaseSessionAttributes {
-  country: string;
+	country: string;
 }
+```
+
+### Custom session IDs
+
+You use your own session IDs with the `sessionId` option, though we recommend sticking with Lucia's default IDs as they provide a good balance between entropy and compactness. If you're using UUIDs, make sure they're generated using a cryptographically secure random source. Object IDs should not be used as session IDs as they do not provide enough entropy.
+
+```ts
+const session = await lucia.createSession(userId, attributes, {
+	sessionId: generate
+});
 ```
 
 ## Validate sessions
@@ -105,7 +115,7 @@ If `Session.fresh` is `true`, it indicates the session expiration has been exten
 ```ts
 const { session } = await lucia.validateSession(sessionId);
 if (session && session.fresh) {
-  // set session cookie
+	// set session cookie
 }
 ```
 

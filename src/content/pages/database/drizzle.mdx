@@ -27,21 +27,21 @@ const connection = await mysql.createConnection();
 const db = drizzle(connection);
 
 const userTable = mysqlTable("user", {
-  id: varchar("id", {
-    length: 255,
-  }).primaryKey(),
+	id: varchar("id", {
+		length: 255
+	}).primaryKey()
 });
 
 const sessionTable = mysqlTable("session", {
-  id: varchar("id", {
-    length: 255,
-  }).primaryKey(),
-  userId: varchar("user_id", {
-    length: 255,
-  })
-    .notNull()
-    .references(() => userTable.id),
-  expiresAt: datetime("expires_at").notNull(),
+	id: varchar("id", {
+		length: 255
+	}).primaryKey(),
+	userId: varchar("user_id", {
+		length: 255
+	})
+		.notNull()
+		.references(() => userTable.id),
+	expiresAt: datetime("expires_at").notNull()
 });
 
 const adapter = new DrizzleMySQLAdapter(db, sessionTable, userTable);
@@ -64,18 +64,18 @@ const pool = new pg.Pool();
 const db = drizzle(pool);
 
 const userTable = pgTable("user", {
-  id: text("id").primaryKey(),
+	id: text("id").primaryKey()
 });
 
 const sessionTable = pgTable("session", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id),
-  expiresAt: timestamp("expires_at", {
-    withTimezone: true,
-    mode: "date",
-  }).notNull(),
+	id: text("id").primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => userTable.id),
+	expiresAt: timestamp("expires_at", {
+		withTimezone: true,
+		mode: "date"
+	}).notNull()
 });
 
 const adapter = new DrizzlePostgreSQLAdapter(db, sessionTable, userTable);
@@ -98,15 +98,15 @@ const sqliteDB = sqlite(":memory:");
 const db = drizzle(sqliteDB);
 
 const userTable = sqliteTable("user", {
-  id: text("id").notNull().primaryKey(),
+	id: text("id").notNull().primaryKey()
 });
 
 const sessionTable = sqliteTable("session", {
-  id: text("id").notNull().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id),
-  expiresAt: integer("expires_at").notNull(),
+	id: text("id").notNull().primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => userTable.id),
+	expiresAt: integer("expires_at").notNull()
 });
 
 const adapter = new DrizzleSQLiteAdapter(db, sessionTable, userTable);

@@ -38,30 +38,30 @@ Create a `DatabaseUserAttributes` interface in the module declaration and add yo
 import { Lucia } from "lucia";
 
 export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: !import.meta.dev,
-    },
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      // attributes has the type of DatabaseUserAttributes
-      githubId: attributes.github_id,
-      username: attributes.username,
-    };
-  },
+	sessionCookie: {
+		attributes: {
+			secure: !import.meta.dev
+		}
+	},
+	getUserAttributes: (attributes) => {
+		return {
+			// attributes has the type of DatabaseUserAttributes
+			githubId: attributes.github_id,
+			username: attributes.username
+		};
+	}
 });
 
 declare module "lucia" {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+	}
 }
 
 interface DatabaseUserAttributes {
-  github_id: number;
-  username: string;
+	github_id: number;
+	username: string;
 }
 ```
 
@@ -78,10 +78,7 @@ Initialize the GitHub provider with the client ID and secret.
 ```ts
 import { GitHub } from "arctic";
 
-export const github = new GitHub(
-  process.env.GITHUB_CLIENT_ID!,
-  process.env.GITHUB_CLIENT_SECRET!,
-);
+export const github = new GitHub(process.env.GITHUB_CLIENT_ID!, process.env.GITHUB_CLIENT_SECRET!);
 ```
 
 ## Sign in page
@@ -91,8 +88,8 @@ Create `pages/login/index.vue` and add a basic sign in button, which should be a
 ```vue
 <!-- pages/login/index.vue -->
 <template>
-  <h1>Sign in</h1>
-  <a href="/login/github">Sign in with GitHub</a>
+	<h1>Sign in</h1>
+	<a href="/login/github">Sign in with GitHub</a>
 </template>
 ```
 
@@ -105,17 +102,17 @@ Create an API route in `server/routes/login/github/index.get.ts`. Generate a new
 import { generateState } from "arctic";
 
 export default defineEventHandler(async (event) => {
-  const state = generateState();
-  const url = await github.createAuthorizationURL(state);
+	const state = generateState();
+	const url = await github.createAuthorizationURL(state);
 
-  setCookie(event, "github_oauth_state", state, {
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-    maxAge: 60 * 10,
-    sameSite: "lax",
-  });
-  return sendRedirect(event, url.toString());
+	setCookie(event, "github_oauth_state", state, {
+		path: "/",
+		secure: process.env.NODE_ENV === "production",
+		httpOnly: true,
+		maxAge: 60 * 10,
+		sameSite: "lax"
+	});
+	return sendRedirect(event, url.toString());
 });
 ```
 
@@ -129,74 +126,63 @@ import { OAuth2RequestError } from "arctic";
 import { generateIdFromEntropySize } from "lucia";
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const code = query.code?.toString() ?? null;
-  const state = query.state?.toString() ?? null;
-  const storedState = getCookie(event, "github_oauth_state") ?? null;
-  if (!code || !state || !storedState || state !== storedState) {
-    throw createError({
-      status: 400,
-    });
-  }
+	const query = getQuery(event);
+	const code = query.code?.toString() ?? null;
+	const state = query.state?.toString() ?? null;
+	const storedState = getCookie(event, "github_oauth_state") ?? null;
+	if (!code || !state || !storedState || state !== storedState) {
+		throw createError({
+			status: 400
+		});
+	}
 
-  try {
-    const tokens = await github.validateAuthorizationCode(code);
-    const githubUserResponse = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-      },
-    });
-    const githubUser: GitHubUser = await githubUserResponse.json();
+	try {
+		const tokens = await github.validateAuthorizationCode(code);
+		const githubUserResponse = await fetch("https://api.github.com/user", {
+			headers: {
+				Authorization: `Bearer ${tokens.accessToken}`
+			}
+		});
+		const githubUser: GitHubUser = await githubUserResponse.json();
 
-    // Replace this with your own DB client.
-    const existingUser = await db
-      .table("user")
-      .where("github_id", "=", githubUser.id)
-      .get();
+		// Replace this with your own DB client.
+		const existingUser = await db.table("user").where("github_id", "=", githubUser.id).get();
 
-    if (existingUser) {
-      const session = await lucia.createSession(existingUser.id, {});
-      appendHeader(
-        event,
-        "Set-Cookie",
-        lucia.createSessionCookie(session.id).serialize(),
-      );
-      return sendRedirect(event, "/");
-    }
+		if (existingUser) {
+			const session = await lucia.createSession(existingUser.id, {});
+			appendHeader(event, "Set-Cookie", lucia.createSessionCookie(session.id).serialize());
+			return sendRedirect(event, "/");
+		}
 
-    const userId = generateIdFromEntropySize(10); // 16 characters long
+		const userId = generateIdFromEntropySize(10); // 16 characters long
 
-    // Replace this with your own DB client.
-    await db.table("user").insert({
-      id: userId,
-      github_id: githubUser.id,
-      username: githubUser.login,
-    });
+		// Replace this with your own DB client.
+		await db.table("user").insert({
+			id: userId,
+			github_id: githubUser.id,
+			username: githubUser.login
+		});
 
-    const session = await lucia.createSession(userId, {});
-    appendHeader(
-      event,
-      "Set-Cookie",
-      lucia.createSessionCookie(session.id).serialize(),
-    );
-    return sendRedirect(event, "/");
-  } catch (e) {
-    // the specific error message depends on the provider
-    if (e instanceof OAuth2RequestError) {
-      // invalid code
-      throw createError({
-        status: 400,
-      });
-    }
-    throw createError({
-      status: 500,
-    });
-  }
+		const session = await lucia.createSession(userId, {});
+		appendHeader(event, "Set-Cookie", lucia.createSessionCookie(session.id).serialize());
+		return sendRedirect(event, "/");
+	} catch (e) {
+		// the specific error message depends on the provider
+		if (e instanceof OAuth2RequestError) {
+			// invalid code
+			throw createError({
+				status: 400
+			});
+		}
+		throw createError({
+			status: 500
+		});
+	}
 });
 
 interface GitHubUser {
-  id: string;
-  login: string;
+	id: string;
+	login: string;
 }
 ```
 
@@ -206,10 +192,10 @@ You can validate requests by checking `event.context.user`. The field `user.user
 
 ```ts
 export default defineEventHandler((event) => {
-  if (event.context.user) {
-    const username = event.context.user.username;
-  }
-  // ...
+	if (event.context.user) {
+		const username = event.context.user.username;
+	}
+	// ...
 });
 ```
 
@@ -220,7 +206,7 @@ Create an API route in `server/api/user.get.ts`. This will just return the curre
 ```ts
 // server/api/user.get.ts
 export default defineEventHandler((event) => {
-  return event.context.user;
+	return event.context.user;
 });
 ```
 
@@ -231,8 +217,8 @@ Create a composable `useUser()` in `composables/auth.ts`.
 import type { User } from "lucia";
 
 export const useUser = () => {
-  const user = useState<User | null>("user", () => null);
-  return user;
+	const user = useState<User | null>("user", () => null);
+	return user;
 };
 ```
 
@@ -241,11 +227,11 @@ Then, create a global middleware in `middleware/auth.global.ts` to populate it.
 ```ts
 // middleware/auth.global.ts
 export default defineNuxtRouteMiddleware(async () => {
-  const user = useUser();
-  const data = await useRequestFetch()("/api/user");
-  if (data) {
-    user.value = data;
-  }
+	const user = useUser();
+	const data = await useRequestFetch()("/api/user");
+	if (data) {
+		user.value = data;
+	}
 });
 ```
 
@@ -264,33 +250,29 @@ Sign out users by invalidating their session with `Lucia.invalidateSession()`. M
 ```ts
 // server/api/logout.post.ts
 export default eventHandler(async (event) => {
-  if (!event.context.session) {
-    throw createError({
-      statusCode: 403,
-    });
-  }
-  await lucia.invalidateSession(event.context.session.id);
-  appendHeader(
-    event,
-    "Set-Cookie",
-    lucia.createBlankSessionCookie().serialize(),
-  );
+	if (!event.context.session) {
+		throw createError({
+			statusCode: 403
+		});
+	}
+	await lucia.invalidateSession(event.context.session.id);
+	appendHeader(event, "Set-Cookie", lucia.createBlankSessionCookie().serialize());
 });
 ```
 
 ```vue
 <script lang="ts" setup>
 async function logout() {
-  await $fetch("/api/logout", {
-    method: "POST",
-  });
-  await navigateTo("/login");
+	await $fetch("/api/logout", {
+		method: "POST"
+	});
+	await navigateTo("/login");
 }
 </script>
 
 <template>
-  <form @submit.prevent="logout">
-    <button>Sign out</button>
-  </form>
+	<form @submit.prevent="logout">
+		<button>Sign out</button>
+	</form>
 </template>
 ```

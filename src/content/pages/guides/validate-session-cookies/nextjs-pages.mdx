@@ -13,22 +13,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  if (request.method === "GET") {
-    return NextResponse.next();
-  }
-  const originHeader = request.headers.get("Origin");
-  // NOTE: You may need to use `X-Forwarded-Host` instead
-  const hostHeader = request.headers.get("Host");
-  if (
-    !originHeader ||
-    !hostHeader ||
-    !verifyRequestOrigin(originHeader, [hostHeader])
-  ) {
-    return new NextResponse(null, {
-      status: 403,
-    });
-  }
-  return NextResponse.next();
+	if (request.method === "GET") {
+		return NextResponse.next();
+	}
+	const originHeader = request.headers.get("Origin");
+	// NOTE: You may need to use `X-Forwarded-Host` instead
+	const hostHeader = request.headers.get("Host");
+	if (!originHeader || !hostHeader || !verifyRequestOrigin(originHeader, [hostHeader])) {
+		return new NextResponse(null, {
+			status: 403
+		});
+	}
+	return NextResponse.next();
 }
 ```
 
@@ -39,25 +35,19 @@ import { verifyRequestOrigin } from "lucia";
 
 import type { NextApiRequest, NextApiResponse } from "next";
 
-async function validateRequest(
-  req: NextApiRequest,
-  res: NextApiResponse,
-): Promise<User | null> {
-  const sessionId = req.cookies.get(lucia.sessionCookieName);
-  if (!sessionId) {
-    return null;
-  }
-  const { session, user } = await lucia.validateSession(sessionId);
-  if (!session) {
-    res.setHeader("Set-Cookie", lucia.createBlankSessionCookie().serialize());
-  }
-  if (session && session.fresh) {
-    res.setHeader(
-      "Set-Cookie",
-      lucia.createSessionCookie(session.id).serialize(),
-    );
-  }
-  return user;
+async function validateRequest(req: NextApiRequest, res: NextApiResponse): Promise<User | null> {
+	const sessionId = req.cookies.get(lucia.sessionCookieName);
+	if (!sessionId) {
+		return null;
+	}
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (!session) {
+		res.setHeader("Set-Cookie", lucia.createBlankSessionCookie().serialize());
+	}
+	if (session && session.fresh) {
+		res.setHeader("Set-Cookie", lucia.createSessionCookie(session.id).serialize());
+	}
+	return user;
 }
 ```
 
@@ -67,16 +57,16 @@ You can now get the current user inside `getServerSideProps()` by passing the re
 import type { GetServerSidePropsContext } from "next";
 
 export function getServerSideProps(context: GetServerSidePropsContext) {
-  const user = await validateRequest(context.req, context.res);
-  if (!user) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
-  // ...
+	const user = await validateRequest(context.req, context.res);
+	if (!user) {
+		return {
+			redirect: {
+				destination: "/login",
+				permanent: false
+			}
+		};
+	}
+	// ...
 }
 ```
 
@@ -84,10 +74,10 @@ export function getServerSideProps(context: GetServerSidePropsContext) {
 import type { NextApiRequest, NextApiResponse } from "next";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const user = await validateRequest(req, res);
-  if (!user) {
-    return res.status(401).end();
-  }
+	const user = await validateRequest(req, res);
+	if (!user) {
+		return res.status(401).end();
+	}
 }
 
 export default handler;
